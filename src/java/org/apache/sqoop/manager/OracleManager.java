@@ -331,19 +331,30 @@ public class OracleManager
       }
     }
 
-    // We only use this for metadata queries. Loosest semantics are okay.
-    connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-
-    // Setting session time zone
-    setSessionTimeZone(connection);
-
-    // Rest of the Sqoop code expects that the connection will have be running
-    // without autoCommit, so we need to explicitly set it to false. This is
-    // usually done directly by SqlManager in the makeConnection method, but
-    // since we are overriding it, we have to do it ourselves.
-    connection.setAutoCommit(false);
+    prepareConnection(connection);
 
     return connection;
+  }
+
+  void prepareConnection(Connection connection) throws SQLException {
+    try {
+      // We only use this for metadata queries. Loosest semantics are okay.
+      connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+      // Setting session time zone
+      setSessionTimeZone(connection);
+
+      // Rest of the Sqoop code expects that the connection will have be running
+      // without autoCommit, so we need to explicitly set it to false. This is
+      // usually done directly by SqlManager in the makeConnection method, but
+      // since we are overriding it, we have to do it ourselves.
+      connection.setAutoCommit(false);
+    } catch (SQLException e) {
+      if (connection != null) {
+        connection.close();
+      }
+      throw e;
+    }
   }
 
   public static String getSessionUser(Connection conn) {

@@ -112,8 +112,9 @@ public class DBOutputFormat<K extends DBWritable, V>
       fieldNames = new String[dbConf.getOutputFieldCount()];
     }
 
+    Connection connection = null;
     try {
-      Connection connection = dbConf.getConnection();
+      connection = dbConf.getConnection();
       PreparedStatement statement = null;
 
       statement = connection.prepareStatement(
@@ -121,6 +122,13 @@ public class DBOutputFormat<K extends DBWritable, V>
       return new org.apache.sqoop.mapreduce.db.DBOutputFormat.DBRecordWriter(
                      connection, statement);
     } catch (Exception ex) {
+      if (connection != null){
+        try {
+          connection.close();
+        } catch (SQLException e) {
+          throw new IOException(e);
+        }
+      }
       throw new IOException(ex);
     }
   }
